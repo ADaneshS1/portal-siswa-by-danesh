@@ -1,6 +1,10 @@
 import styles from "@/styles/login.module.css";
+import { useState } from "react";
+import { useRouter } from "next/router";
 
 export default function login() {
+  const [nis, setNis] = useState('');
+  const [password, setPassword] = useState('');
   return (
     <div className={styles.font}
       style={{
