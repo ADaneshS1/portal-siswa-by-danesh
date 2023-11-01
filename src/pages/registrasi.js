@@ -1,6 +1,6 @@
 import styles from "@/styles/login.module.css";
 
-export default function login() {
+export default function regristrasi() {
   return (
     <div className={styles.font}
       style={{
@@ -20,13 +20,16 @@ export default function login() {
         }}
       >
         <div>
-          <h2>Sign In</h2>
+          <h2>Registrasi</h2>
           <p style={{opacity:"0.4"}}>Enter your email and password to sign in!</p>
           <button className={styles.bodra} style={{ width: "70%", marginTop: "15px", padding:"15px 20px", fontWeight:"600", backgroundColor:"#F4F7FE", color:"#2B3674"}}>Sign in with Google</button>
 
           <form style={{ display: "flex", flexDirection: "column", marginRight:"20px", marginTop:"20px", gap:"10px" }}>
-            <label className={styles.label}>Email <span style={{color:'blue'}}>*</span> </label>
-            <input className={styles.bodra} style={{ width: "70%", marginTop: "4px", padding:"10px 5px", border:"2px solid silver" }} placeholder="mail@simmmple.com" />
+            <label className={styles.label}>Nama Lengkap <span style={{color:'blue'}}>*</span> </label>
+            <input className={styles.bodra} style={{ width: "70%", marginTop: "4px", padding:"10px 5px", border:"2px solid silver" }} placeholder="Abdullah Ihsan" />
+
+            <label className={styles.label}>NIS <span style={{color:'blue'}}>*</span> </label>
+            <input className={styles.bodra} style={{ width: "70%", marginTop: "4px", padding:"10px 5px", border:"2px solid silver" }} placeholder="Max. 5 characters" />
 
             <label className={styles.label}>Password <span style={{color:'blue'}}>*</span>  </label>
             <input className={styles.bodra} style={{ width: "70%", marginTop: "4px", padding:"10px 5px", border:"2px solid silver"}} placeholder="Min. 8 characters" />
@@ -34,7 +37,7 @@ export default function login() {
             <button className={styles.bodra} style={{ width: "72%", marginTop: "15px", padding:"15px 20px", backgroundColor:"blue", color:"white", fontWeight:"600", border:"2px solid blue" }}>Sign In</button>
           </form>
           
-          <p>Not registed yet? <a style={{color:'blue'}}>Create an Account</a> </p>
+          <p>Not registed yet? <span style={{color:'blue'}}>Create an Account</span> </p>
         </div>
       </div>
     </div>
