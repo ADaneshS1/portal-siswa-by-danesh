@@ -1,73 +1,110 @@
 import mongoose from "mongoose";
-import uuid from "uuid";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken"
+import {v4 as uuid} from 'uuid';
 
-const url = 'mongodb+srv://ppqita:santri@ppqitadb.dada60q.mongodb.net/';
-let myCollection, myClient;
-
-const initDB = async () => {
-    try {
-        const { collection, client } = await connectionDB(url,"portal-siswa","users"
-        );
-        myCollection = collection;
-        myClient = client;
-        console.log("Server DB berjalan");
-    } catch (error) {
-        console.log(error);
-    }
-};
-
-const connectionDB = async (uri, dbName, collectionName) => {
-  const client = await mongoose.connect(uri, {
+const connectionDB = async () => {
+  try {
+    await mongoose.connect('mongodb+srv://ppqita:santri@ppqitadb.dada60q.mongodb.net/portal-siswa', {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      dbName: dbName,
-  });
-
-  const collection = client.connection.collection(collectionName);
-
-  return { collection, client };
+    }) 
+  } catch (error) {
+      console.log(error);
+  }
 };
 
-initDB();
+connectionDB();
 
 const userSchema = new mongoose.Schema({
-  id: String,
-  nama: String,
-  NIS: { type: Number, unique: true, required: true },
-  password: { type: String, required: true },
-  token: String,
-  status: { type: String, default: 'aktif' },
-  role: { type: String, default: 'siswa' },
+  id: {
+    type: String,
+    require: true
+  },
+  name: {
+    type: String,
+    require: true
+  },
+  nis: {
+    type: String,
+    require: true
+  },
+  password: {
+    type: String,
+    require: true
+  },
+  token: {
+    type: String,
+    default:'',
+  }
 });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model("user", userSchema);
 
 export default async function handler(req, res) {
     try {
-        const { nama, NIS, password } = req.body;
-    
-        if (nama.length < 3 && nama.length > 20) {
-          return res.status(400).json({ message: 'Nama harus memiliki 3-20 karakter.' });
-        }
-    
-        if (NIS.length !== 5) {
-          return res.status(400).json({ message: 'NIS harus memiliki 5 karakter.' });
-        }
-    
-        if (password.length < 6 || password.length > 14) {
-          return res.status(400).json({ message: 'Password harus memiliki 6-14 karakter.' });
-        }
-    
-        const id = uuid.v4();
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ id, nama, NIS, password: hashedPassword });
-        await user.save();
-    
-        res.status(201).json({ message: 'Pendaftaran berhasil.' });
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan saat mendaftar.' });
+      if (req.method !== 'POST') {
+        return res.status(405).json({ error: true, message: 'mehtod tidak diijinkan' });
       }
+
+      const { name, nis, password } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: true, message: 'tidak ada Nama' });
+      }
+
+      if (!nis) {
+        return res.status(400).json({ error: true, message: 'tidak ada NIS' });
+      }
+
+      if (!password) {
+        return res
+          .status(400)
+          .json({ error: true, message: 'tidak ada Password' });
+      }
+
+      if (name.length < 3 || name.length >= 20) {
+        return res.status(400).json({
+          error: true,
+          message: 'name harus diantar 3 sampai 20 karakter',
+        });
+      }
+
+      if (nis.length !== 5) {
+        return res.status(400).json({
+          error: true,
+          message: 'nis harus 5 karakter',
+        });
+      }
+
+      if (password.length < 6 || password.length >= 10) {
+        return res.status(400).json({
+          error: true,
+          message: 'password harus diantar 6 sampai 10 karakter',
+        });
+      }
+
+      // cek apakah id atau nis sudah digunakan
+      const user = await User.findOne({ nis });
+      console.log('user: ', user);
+
+      if (user && user.nis) {
+        return res.status(400).json({
+          error: true,
+          message: 'nis sudah pernah didaftarkan',
+        });
+      }
+
+      // lengkapi data yg kurang
+      const id = uuid();
+
+      const data = { id, name, nis, password };
+
+      // jika sudah sesuai simpan
+      const users = new User(data);
+      await users.save();
+
+      // kasih tahu client (hanya data yg diperbolehkan)
+      return res.status(201).json({ id: users.id, nis: users.nis });
+    } catch (error) {
+      console.log('error:', error);
+      res.status(500).json({ error: true, message: 'ada masalah harap hubungi developer' });
+    }
 }

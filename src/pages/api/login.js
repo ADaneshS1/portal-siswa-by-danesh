@@ -1,66 +1,105 @@
 import mongoose from "mongoose";
-import uuid from "uuid";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken"
+import { generateRandomToken } from "@/token/randomToken";
 
-const url = 'mongodb+srv://ppqita:santri@ppqitadb.dada60q.mongodb.net/';
-let myCollection, myClient;
-
-const initDB = async () => {
-    try {
-        const { collection, client } = await connectionDB(url,"portal-siswa","users"
-        );
-
-        myCollection = collection;
-        myClient = client;
-        console.log("Server DB berjalan");
-    } catch (error) {
-        console.log(error);
-    }
-};
-
-const connectionDB = async (uri, dbName, collectionName) => {
-  const client = await mongoose.connect(uri, {
+const connectionDB = async () => {
+  try {
+    await mongoose.connect('mongodb+srv://ppqita:santri@ppqitadb.dada60q.mongodb.net/portal-siswa', {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      dbName: dbName,
-  });
+    }) 
+  } catch (error) {
+      console.log(error);
+  }
 
-  const collection = client.connection.collection(collectionName);
-
-  return { collection, client };
 };
 
-initDB();
+connectionDB();
 
 const userSchema = new mongoose.Schema({
-  id: String,
-  nama: String,
-  NIS: { type: Number, unique: true, required: true },
-  password: { type: String, required: true },
-  token: String,
-  status: { type: String, default: 'aktif' },
-  role: { type: String, default: 'siswa' },
+  id: {
+    type: String,
+    require: true
+  },
+  name: {
+    type: String,
+    require: true
+  },
+  nis: {
+    type: String,
+    require: true
+  },
+  password: {
+    type: String,
+    require: true
+  },
+  token: {
+    type: String,
+    default:'',
+  }
+
 });
 
-const User = mongoose.model("User", userSchema);
+const Users = mongoose.model("user", userSchema);
 
 export default async function handler(req, res) {
-    try {
-        const { NIS, password } = req.body;
-        const user = await User.findOne({ NIS });
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405) .json({ error: true, message: 'mehtod tidak diijinkan' });
+    }
     
-        if (!user || !(await bcrypt.compare(password, user.password)) || user.status !== 'aktif') {
-          return res.status(401).json({ message: 'Login gagal.' });
-        }
-    
-        const token = jwt.sign({ id: user.id }, 'secret_key', { expiresIn: '1h' });
-        user.token = token;
-        await user.save();
-    
-        res.json({ token });
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Terjadi kesalahan saat login.' });
-      }
+    const { nis, password } = req.body;
+
+    if (!nis) {
+      return res.status(400).json({ error: true, message: 'tidak ada NIS' });
+    }
+
+    if (!password) {
+      return res
+        .status(400)
+        .json({ error: true, message: 'tidak ada Password' });
+    }
+
+
+    if (nis.length !== 5) {
+      return res.status(400).json({
+        error: true,
+        message: 'nis harus 5 karakter',
+      });
+    }
+
+    if (password.length < 6 || password.length >= 10) {
+      return res.status(400).json({
+        error: true,
+        message: 'password harus diantar 6 sampai 10 karakter',
+      });
+    }
+    // cek apakah user ada
+    const user = await Users.findOne({ nis, password });
+
+    console.log('user: ', user);
+
+    if (!user || !user.nis) {
+      return res.status(400).json({
+        error: true,
+        message: 'user tidak ditemukan',
+      });
+    }
+
+    // lengkapi data yg kurang
+    const token = generateRandomToken(10);
+
+    // jika sudah sesuai simpan
+    const users = await Users.findOneAndUpdate(
+      { nis, password },
+      { token },
+      { new: true }
+    );
+    console.log('users after update: ', users);
+
+    // kasih tahu client (hanya data yg diperbolehkan)
+    return res.status(200).json({ token });
+  } catch (error) {
+    console.log('error:', error);
+    res.status(500).json({ error: true, message: 'ada masalah harap hubungi developer' });
+  }
 }
