@@ -1,43 +1,8 @@
-import mongoose from "mongoose";
 import {v4 as uuid} from 'uuid';
-
-const connectionDB = async () => {
-  try {
-    await mongoose.connect('mongodb+srv://ppqita:santri@ppqitadb.dada60q.mongodb.net/portal-siswa', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }) 
-  } catch (error) {
-      console.log(error);
-  }
-};
+import User from "@/models/users"
+import {connectionDB} from "@/db/mongodb"
 
 connectionDB();
-
-const userSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    require: true
-  },
-  name: {
-    type: String,
-    require: true
-  },
-  nis: {
-    type: String,
-    require: true
-  },
-  password: {
-    type: String,
-    require: true
-  },
-  token: {
-    type: String,
-    default:'',
-  }
-});
-
-const User = mongoose.model("user", userSchema);
 
 export default async function handler(req, res) {
     try {

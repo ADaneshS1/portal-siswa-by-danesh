@@ -1,42 +1,10 @@
 import mongoose from "mongoose";
+import {connectionDB} from "@/db/mongodb"
+import User from "@/models/users"
+import { getCookies, getCookie, setCookie, deleteCookie } from 'cookies-next';
 
-const connectionDB = async () => {
-  try {
-    await mongoose.connect('mongodb+srv://ppqita:santri@ppqitadb.dada60q.mongodb.net/portal-siswa', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }) 
-  } catch (error) {
-      console.log(error);
-  }
-};
 
 connectionDB();
-
-const userSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    require: true
-  },
-  name: {
-    type: String,
-    require: true
-  },
-  nis: {
-    type: String,
-    require: true
-  },
-  password: {
-    type: String,
-    require: true
-  },
-  token: {
-    type: String,
-    default:'',
-  }
-});
-
-const User = mongoose.model("user", userSchema);
 
 export default async function handler(req, res) {
     try {
@@ -54,6 +22,7 @@ export default async function handler(req, res) {
         console.log('user: ', user);
     
         if (!user || !user.nis) {
+          deleteCookie('token', {req,res})
           return res.status(400).json({
             error: true,
             message: 'token tidak valid',
@@ -61,7 +30,7 @@ export default async function handler(req, res) {
         }
     
         // kasih tahu client (hanya data yg diperbolehkan)
-        return res.status(200).json({ id: user.id, nis: user.nis });
+        return res.status(200).json({ id: user.id, nis: user.nis, name:user.name });
       } catch (error) {
         console.log('error:', error);
         res.status(500).json({ error: true, message: 'ada masalah harap hubungi developer' });

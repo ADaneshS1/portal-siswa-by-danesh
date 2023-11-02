@@ -1,45 +1,10 @@
 import mongoose from "mongoose";
 import { generateRandomToken } from "@/token/randomToken";
-
-const connectionDB = async () => {
-  try {
-    await mongoose.connect('mongodb+srv://ppqita:santri@ppqitadb.dada60q.mongodb.net/portal-siswa', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }) 
-  } catch (error) {
-      console.log(error);
-  }
-
-};
+import {connectionDB} from "@/db/mongodb"
+import User from "@/models/users"
+import { getCookies, getCookie, setCookie, deleteCookie } from 'cookies-next';
 
 connectionDB();
-
-const userSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    require: true
-  },
-  name: {
-    type: String,
-    require: true
-  },
-  nis: {
-    type: String,
-    require: true
-  },
-  password: {
-    type: String,
-    require: true
-  },
-  token: {
-    type: String,
-    default:'',
-  }
-
-});
-
-const Users = mongoose.model("user", userSchema);
 
 export default async function handler(req, res) {
   try {
@@ -74,7 +39,7 @@ export default async function handler(req, res) {
       });
     }
     // cek apakah user ada
-    const user = await Users.findOne({ nis, password });
+    const user = await User.findOne({ nis, password });
 
     console.log('user: ', user);
 
@@ -87,9 +52,10 @@ export default async function handler(req, res) {
 
     // lengkapi data yg kurang
     const token = generateRandomToken(10);
+    setCookie('token',token, {req,res,maxAge:60*60*24*30})
 
     // jika sudah sesuai simpan
-    const users = await Users.findOneAndUpdate(
+    const users = await User.findOneAndUpdate(
       { nis, password },
       { token },
       { new: true }
